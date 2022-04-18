@@ -1,0 +1,52 @@
+version: 3
+services:
+  eureka:
+    image : 'samsonadmasu/eureka'
+    networks:
+      - bank
+    container_name: eureka
+    ports:
+      - "8761:8761"
+  bank:
+    image : 'samsonadmasu/bank:latest'
+    networks:
+      - bank
+    container_name: bank
+    depends_on:
+      - eureka
+    environment:
+      - eureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://bank_db:5432/bank
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    ports:
+      - "8085:8085"
+
+  bank_db:
+    image: 'postgres:14.2-alpine'
+    networks:
+      - bank
+    container_name: bank_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=bank
+    ports:
+      - "6542:5432"
+
+  atm:
+    image: 'samsonadmasu/atm:latest'
+    networks:
+      - bank
+    container_name: atm
+    depends_on:
+      - eureka
+    environment:
+      - eureka.client.serviceUrl.defaultZone=http://eureka:8761/eureka/
+    ports:
+      - "8086:8086"
+
+networks:
+  bank:
+    driver: bridge
